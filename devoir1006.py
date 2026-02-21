@@ -1,4 +1,4 @@
-# EX2:
+# EX2 - EX4
 
 from PIL import Image
 
@@ -22,4 +22,3 @@ def draw_belgian_state_flag(filename: str) -> None:
 draw_belgian_state_flag("belgium.png")
 
 
-# EX4
