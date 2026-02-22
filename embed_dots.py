@@ -1,4 +1,6 @@
 # EX6
+import argparse
+import sys
 
 
 """
@@ -21,26 +23,61 @@ Usage:
     python3 embed_dots.py "DD/MM/YYYY HH:MM" "SERIAL" "USER00" input.bmp output.bmp
 """
 
-import argparse
-import sys
 
 from PIL import Image
 
-## YOUR CODE HERE ##
-def map(filename: str) -> None:
-    (width, height) = (30, 160)
-    dx = [1, 7, 14, 21]
-    img = Image.open(filename)
-    for x in dx: # separators every 7 columns
+def yellow_laser_ember(img, minute: int, hour: int, day: int, month: int, year: int, 
+         serial: str, username: str) -> None:
+    """Draw yellow dots matrix with encoded data."""
+    (width, height) = (30, 160) # starting point
+    
+    # Separators at columns 1, 7, 14, 21, if the starting index is 0 then 1 is 0 ?
+    dx = [0, 6, 13, 20]
+    for x in dx:
         for y in range(8):
-           img.putpixel((width + x, height + y), (255,255,0)) # drawing the separators
-    img.save(filename)
-    return 
-
-map("belgium.bmp")
-
-
-
+            img.putpixel((width + x, height + y), (255, 255, 0))
+    
+    datetime_values = [minute, hour, day, month, year]
+    for i in range(len(datetime_values)): # I could use enumerate but this is more clear for me 
+        value = datetime_values[i]
+        col = 1 + i  # columns 1-5 (0-indexed), same question in code-line 35
+        for j in range(8):
+            if value & (2**j): # 2**j values in binary are: [01,10,100,...], so this if function checks for every 1 in the "value" binary 
+                # & is just an and for binaries
+                img.putpixel((width + col, height + j), (255, 255, 0))
+ 
+    for i in range(6):
+        col = 7 + i  # columns 7-12 (0-indexed)
+        char_code = ord(serial[i])
+        for j in range(8):
+            if char_code & (2**j):
+                img.putpixel((width + col, height + j), (255, 255, 0))
+    
+    # Columns 15-20: username (6 ASCII chars)
+    for i in range(6):
+        col = 14 + i  # columns 14-19 (0-indexed)
+        char_code = ord(username[i])
+        for j in range(8):
+            if char_code & (2**j):
+                img.putpixel((width + col, height + j), (255, 255, 0))
+    
+    parity_col = 21
+    for row in range(8):
+        parity = 1
+        check = 2**row  
+        for col in range(1, 20):
+            if col != 6 and col != 13: # exclude the separators columns
+                # Check if pixel is set
+                if (col == 1 and (minute & (check))) or \
+                (col == 2 and (hour & (check))) or \
+                (col == 3 and (day & (check))) or \
+                (col == 4 and (month & (check))) or \
+                (col == 5 and (year & (check))) or \
+                (col in [7, 8, 9, 10, 11, 12] and (ord(serial[col - 7]) & (check))) or \
+                (col in [14, 15, 16, 17, 18, 19] and (ord(username[col - 14]) & (check))):
+                    parity ^= 1 # toggles between 0 and 1 if the current column is activated
+        if parity:
+            img.putpixel((width + parity_col, height + row), (255, 255, 0)) # yellow if the number of the active columns is pair? idk if it should be pair or odd
 
 
 def validate_serial(value: str) -> str:
@@ -138,7 +175,11 @@ def main():
     args = parse_args()
     # Unpack datetime tuple
     minute, hour, day, month, year = args.datetime
-    # Other variables are args.input, args.serial, args.username, args.output
+    
+    # Embed matrix into image and save
+    img = Image.open(args.input)
+    yellow_laser_ember(img, minute, hour, day, month, year, args.serial, args.username)
+    img.save(args.output)
 
 if __name__ == "__main__":
     main()
