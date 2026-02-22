@@ -40,28 +40,28 @@ def yellow_laser_ember(img, minute: int, hour: int, day: int, month: int, year: 
     datetime_values = [minute, hour, day, month, year]
     for i in range(len(datetime_values)): # I could use enumerate but this is more clear for me 
         value = datetime_values[i]
-        col = 1 + i  # columns 1-5 (0-indexed), same question in code-line 35
+        col = 1 + i  # columns 1 to 5, same question in code-line 35
         for j in range(8):
             if value & (2**j): # 2**j values in binary are: [01,10,100,...], so this if function checks for every 1 in the "value" binary 
                 # & is just an and for binaries
                 img.putpixel((width + col, height + j), (255, 255, 0))
- 
+    # serial
     for i in range(6):
-        col = 7 + i  # columns 7-12 (0-indexed)
+        col = 7 + i  # columns 7 to 12 
         char_code = ord(serial[i])
         for j in range(8):
             if char_code & (2**j):
                 img.putpixel((width + col, height + j), (255, 255, 0))
     
-    # Columns 15-20: username (6 ASCII chars)
+    # username 
     for i in range(6):
-        col = 14 + i  # columns 14-19 (0-indexed)
+        col = 14 + i  # columns 14 to 19 
         char_code = ord(username[i])
         for j in range(8):
             if char_code & (2**j):
                 img.putpixel((width + col, height + j), (255, 255, 0))
     
-    parity_col = 21
+    # parity
     for row in range(8):
         parity = 1
         check = 2**row  
@@ -77,7 +77,7 @@ def yellow_laser_ember(img, minute: int, hour: int, day: int, month: int, year: 
                 (col in [14, 15, 16, 17, 18, 19] and (ord(username[col - 14]) & (check))):
                     parity ^= 1 # toggles between 0 and 1 if the current column is activated
         if parity:
-            img.putpixel((width + parity_col, height + row), (255, 255, 0)) # yellow if the number of the active columns is pair? idk if it should be pair or odd
+            img.putpixel((width + 21, height + row), (255, 255, 0)) # yellow if the number of the active columns is pair? idk if it should be pair or odd
 
 
 def validate_serial(value: str) -> str:
@@ -173,10 +173,8 @@ def parse_args() -> argparse.Namespace:
 
 def main():
     args = parse_args()
-    # Unpack datetime tuple
     minute, hour, day, month, year = args.datetime
     
-    # Embed matrix into image and save
     img = Image.open(args.input)
     yellow_laser_ember(img, minute, hour, day, month, year, args.serial, args.username)
     img.save(args.output)
